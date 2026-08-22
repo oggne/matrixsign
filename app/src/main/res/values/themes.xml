@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MatrixSign" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/matrix_black</item>
+        <item name="android:navigationBarColor">@color/matrix_black</item>
+        <item name="android:windowBackground">@color/matrix_black</item>
+    </style>
+
+    <style name="Theme.My" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

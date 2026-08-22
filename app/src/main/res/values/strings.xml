@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">MatrixSign</string>
+    <string name="permission_camera">Требуется разрешение на камеру</string>
+    <string name="permission_audio">Требуется разрешение на микрофон</string>
+    <string name="permission_bluetooth">Требуется разрешение на Bluetooth</string>
+    <string name="gesture_recognition">Распознавание жестов</string>
+    <string name="speech_to_text">Речь в текст</string>
+    <string name="text_to_speech">Текст в речь</string>
+    <string name="settings">Настройки</string>
+    <string name="font_size">Размер шрифта</string>
+    <string name="language">Язык</string>
+    <string name="russian">Русский</string>
+    <string name="english">English</string>
+    <string name="call_interpreter">Вызвать сурдопереводчика</string>
+
+    <!-- Context keywords for STT-based context detection -->
+    <!-- Greeting context -->
+    <string name="context_greeting_keywords">привет,здравствуй,добрый день,добрый вечер,доброе утро,hi,hello,hey</string>
+
+    <!-- Weather context -->
+    <string name="context_weather_keywords">погода,дождь,солнце,снег,ветер,температура,жарко,холодно,weather,rain,sun,snow,wind,temperature,hot,cold</string>
+
+    <!-- Food context -->
+    <string name="context_food_keywords">еда,есть,голоден,ресторан,кафе,обед,ужин,завтрак,food,eat,hungry,restaurant,cafe,lunch,dinner,breakfast</string>
+
+    <!-- Question context -->
+    <string name="context_question_keywords">как,что,где,когда,почему,кто,how,what,where,when,why,who</string>
+
+    <!-- Response context -->
+    <string name="context_response_keywords">да,нет,спасибо,пожалуйста,извините,ok,okay,yes,no,thank,please,sorry</string>
+</resources>

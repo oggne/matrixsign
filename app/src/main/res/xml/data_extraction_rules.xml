@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample data extraction rules file; uncomment and customize as necessary.
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   for details.
+-->
+<data-extraction-rules>
+    <!-- Пользовательские жесты (landmark-файлы и обученные модели в filesDir/gestures,
+         датасет в filesDir/datasets) и БД gesture_database — биометрически-смежные
+         данные, которые не должны попадать в облачный/ADB бэкап. -->
+    <cloud-backup>
+        <exclude domain="file" path="gestures/" />
+        <exclude domain="file" path="datasets/" />
+        <exclude domain="database" path="gesture_database" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="gestures/" />
+        <exclude domain="file" path="datasets/" />
+        <exclude domain="database" path="gesture_database" />
+    </device-transfer>
+</data-extraction-rules>

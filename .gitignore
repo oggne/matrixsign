@@ -1,0 +1,29 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+build/
+**/build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.kotlin/
+.cursor/
+.snapshots/
+
+# Embedded toolchains — do not track, huge and reproducible via setup scripts
+jdk-17/
+jdk-17.zip
+python-3.10/
+
+# Training data / dataset — large binary data, keep out of source control
+slovo_dataset/
+rsl_data.csv
+training_log.txt

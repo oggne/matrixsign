@@ -1,0 +1,211 @@
+package com.matrixsign
+
+import android.content.Context
+import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import org.tensorflow.lite.Interpreter
+import java.io.File
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.channels.FileChannel
+
+/**
+ * Классификатор жестов РЖЯ на основе TFLite модели.
+ * Принимает на вход landmarks от MediaPipe и выдает метку жеста.
+ * Optimized version: pre-allocates buffers.
+ */
+class RslClassifier(private val context: Context) {
+
+    private var interpreter: Interpreter? = null
+    private var labels: List<String> = emptyList()
+    private var isInitialized = false
+    
+    // Pre-allocated buffers to avoid GC pressure
+    private var inputBuffer: ByteBuffer? = null
+    private var outputBuffer: Array<FloatArray>? = null
+
+    /**
+     * Инициализация классификатора.
+     * Загружает модель rsl_classifier.tflite из filesDir (если есть) или assets.
+     */
+    fun initialize() {
+        if (isInitialized) return
+        
+        try {
+            // Сначала ищем модель во внутреннем хранилище (обученную пользователем)
+            val customModelFile = File(context.filesDir, "rsl_classifier.tflite")
+            val modelBuffer: ByteBuffer? = if (customModelFile.exists()) {
+                loadModelFromFile(customModelFile)
+            } else {
+                // Иначе пытаемся загрузить из assets (предобученная)
+                loadModelFromAssets("rsl_classifier.tflite")
+            }
+
+            if (modelBuffer != null) {
+                val options = Interpreter.Options()
+                // Use XNNPACK delegate if available for better CPU performance on Android
+                // options.setUseXNNPACK(true) 
+                
+                interpreter = Interpreter(modelBuffer, options)
+                
+                // Загружаем метки (labels)
+                val customLabelsFile = File(context.filesDir, "rsl_labels.txt")
+                labels = if (customLabelsFile.exists()) {
+                    customLabelsFile.readLines()
+                } else {
+                    loadLabelsFromAssets("rsl_labels.txt")
+                }
+                
+                // Pre-allocate buffers
+                // Input: [1, 63] (21 points * 3 coords) * 4 bytes/float
+                inputBuffer = ByteBuffer.allocateDirect(21 * 3 * 4).apply {
+                    order(ByteOrder.nativeOrder())
+                }
+                
+                // Output: [1, num_classes]
+                if (labels.isNotEmpty()) {
+                    outputBuffer = Array(1) { FloatArray(labels.size) }
+                }
+
+                isInitialized = true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            isInitialized = false
+        }
+    }
+
+    private fun loadModelFromFile(file: File): ByteBuffer {
+        val inputStream = FileInputStream(file)
+        val fileChannel = inputStream.channel
+        val startOffset = 0L
+        val declaredLength = fileChannel.size()
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+    }
+
+    private fun loadModelFromAssets(fileName: String): ByteBuffer? {
+        return try {
+            val fileDescriptor = context.assets.openFd(fileName)
+            val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
+            val fileChannel = inputStream.channel
+            val startOffset = fileDescriptor.startOffset
+            val declaredLength = fileDescriptor.declaredLength
+            fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+        } catch (e: Exception) {
+            // Резервный механизм: копируем во временный кэш, если AAPT сжал модель при упаковке
+            try {
+                val cacheFile = File(context.cacheDir, fileName)
+                if (!cacheFile.exists()) {
+                    context.assets.open(fileName).use { input ->
+                        java.io.FileOutputStream(cacheFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+                loadModelFromFile(cacheFile)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                null
+            }
+        }
+    }
+    
+    private fun loadLabelsFromAssets(fileName: String): List<String> {
+        return try {
+            context.assets.open(fileName).bufferedReader().readLines()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Классификация жеста.
+     * @param result Результат от MediaPipe HandLandmarker
+     * @return Название жеста или null, если уверенность низкая или модель не готова.
+     */
+    fun classify(result: HandLandmarkerResult): String? {
+        if (!isInitialized || interpreter == null || labels.isEmpty()) return null
+        
+        // Берем первую руку
+        if (result.landmarks().isEmpty()) return null
+        val landmarks = result.landmarks()[0]
+        
+        // Reset input buffer position
+        val input = inputBuffer ?: return null
+        input.rewind()
+        
+        // 1. Центрирование (wrist-relative): смещаем координаты относительно запястья (точка 0)
+        val wristX = landmarks[0].x()
+        val wristY = landmarks[0].y()
+        val wristZ = landmarks[0].z()
+        
+        val coordsNorm = FloatArray(21 * 3)
+        for (i in 0 until 21) {
+            val landmark = landmarks[i]
+            coordsNorm[i * 3] = landmark.x() - wristX
+            coordsNorm[i * 3 + 1] = landmark.y() - wristY
+            coordsNorm[i * 3 + 2] = landmark.z() - wristZ
+        }
+        
+        // 2. Масштабирование (unit-scale): делим на максимальное расстояние от запястья до любой точки
+        var maxDist = 0.0f
+        for (i in 0 until 21) {
+            val x = coordsNorm[i * 3]
+            val y = coordsNorm[i * 3 + 1]
+            val z = coordsNorm[i * 3 + 2]
+            val dist = kotlin.math.sqrt(x * x + y * y + z * z)
+            if (dist > maxDist) {
+                maxDist = dist
+            }
+        }
+        
+        if (maxDist > 0.0f) {
+            for (i in 0 until coordsNorm.size) {
+                coordsNorm[i] /= maxDist
+            }
+        }
+        
+        // Записываем нормализованные данные во входной буфер TFLite
+        for (coord in coordsNorm) {
+            input.putFloat(coord)
+        }
+        
+        // Run inference
+        val output = outputBuffer ?: return null
+        
+        interpreter?.run(input, output)
+        
+        // Поиск максимума
+        val probabilities = output[0]
+        var maxIndex = -1
+        var maxProb = 0.0f
+        
+        for (i in probabilities.indices) {
+            if (probabilities[i] > maxProb) {
+                maxProb = probabilities[i]
+                maxIndex = i
+            }
+        }
+        
+        // Log for debugging
+        if (maxProb > 0.1f) {
+             android.util.Log.d("RslClassifier", "Top: $maxIndex (${labels.getOrElse(maxIndex) {"?"}}) = $maxProb")
+        }
+
+        // Порог уверенности снижен до 0.6 для более стабильного срабатывания при сглаживании
+        return if (maxIndex != -1 && maxProb > 0.6f && maxIndex < labels.size) {
+            labels[maxIndex]
+        } else {
+            null
+        }
+    }
+    
+    fun close() {
+        interpreter?.close()
+        interpreter = null
+        isInitialized = false
+        inputBuffer = null
+        outputBuffer = null
+    }
+}
+

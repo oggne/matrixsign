@@ -1,0 +1,191 @@
+{
+  "version": "1.0",
+  "language": "ru",
+  "sign_language": "RSL",
+  "gestures": {
+    "привет": {
+      "gesture_id": "hello",
+      "description": "Приветствие",
+      "frequency": 1000
+    },
+    "пока": {
+      "gesture_id": "goodbye",
+      "description": "Прощание",
+      "frequency": 900
+    },
+    "спасибо": {
+      "gesture_id": "thank_you",
+      "description": "Благодарность",
+      "frequency": 950
+    },
+    "пожалуйста": {
+      "gesture_id": "please",
+      "description": "Просьба",
+      "frequency": 800
+    },
+    "да": {
+      "gesture_id": "yes",
+      "description": "Согласие",
+      "frequency": 1000
+    },
+    "нет": {
+      "gesture_id": "no",
+      "description": "Отрицание",
+      "frequency": 1000
+    },
+    "извините": {
+      "gesture_id": "sorry",
+      "description": "Извинение",
+      "frequency": 700
+    },
+    "здравствуйте": {
+      "gesture_id": "greeting_formal",
+      "description": "Формальное приветствие",
+      "frequency": 600
+    },
+    "до свидания": {
+      "gesture_id": "farewell",
+      "description": "Формальное прощание",
+      "frequency": 500
+    },
+    "как дела": {
+      "gesture_id": "how_are_you",
+      "description": "Вопрос о делах",
+      "frequency": 850
+    },
+    "хорошо": {
+      "gesture_id": "good",
+      "description": "Хорошо",
+      "frequency": 900
+    },
+    "плохо": {
+      "gesture_id": "bad",
+      "description": "Плохо",
+      "frequency": 700
+    },
+    "давай": {
+      "gesture_id": "let_go",
+      "description": "Призыв к действию",
+      "frequency": 600
+    },
+    "можно": {
+      "gesture_id": "can",
+      "description": "Разрешение",
+      "frequency": 750
+    },
+    "нельзя": {
+      "gesture_id": "cannot",
+      "description": "Запрет",
+      "frequency": 700
+    },
+    "помощь": {
+      "gesture_id": "help",
+      "description": "Просьба о помощи",
+      "frequency": 800
+    },
+    "вода": {
+      "gesture_id": "water",
+      "description": "Вода",
+      "frequency": 650
+    },
+    "еда": {
+      "gesture_id": "food",
+      "description": "Еда",
+      "frequency": 700
+    },
+    "дом": {
+      "gesture_id": "home",
+      "description": "Дом",
+      "frequency": 600
+    },
+    "работа": {
+      "gesture_id": "work",
+      "description": "Работа",
+      "frequency": 650
+    },
+    "семья": {
+      "gesture_id": "family",
+      "description": "Семья",
+      "frequency": 550
+    },
+    "друг": {
+      "gesture_id": "friend",
+      "description": "Друг",
+      "frequency": 600
+    },
+    "любовь": {
+      "gesture_id": "love",
+      "description": "Любовь",
+      "frequency": 500
+    },
+    "солнечно": {
+      "gesture_id": "sunny",
+      "description": "Солнечная погода",
+      "frequency": 400
+    },
+    "дождь": {
+      "gesture_id": "rain",
+      "description": "Дождь",
+      "frequency": 450
+    },
+    "снег": {
+      "gesture_id": "snow",
+      "description": "Снег",
+      "frequency": 400
+    },
+    "ветер": {
+      "gesture_id": "wind",
+      "description": "Ветер",
+      "frequency": 350
+    },
+    "жарко": {
+      "gesture_id": "hot",
+      "description": "Жарко",
+      "frequency": 400
+    },
+    "холодно": {
+      "gesture_id": "cold",
+      "description": "Холодно",
+      "frequency": 400
+    },
+    "тепло": {
+      "gesture_id": "warm",
+      "description": "Тепло",
+      "frequency": 350
+    },
+    "температура": {
+      "gesture_id": "temperature",
+      "description": "Температура",
+      "frequency": 300
+    },
+    "ресторан": {
+      "gesture_id": "restaurant",
+      "description": "Ресторан",
+      "frequency": 300
+    },
+    "кафе": {
+      "gesture_id": "cafe",
+      "description": "Кафе",
+      "frequency": 300
+    },
+    "обед": {
+      "gesture_id": "lunch",
+      "description": "Обед",
+      "frequency": 400
+    },
+    "ужин": {
+      "gesture_id": "dinner",
+      "description": "Ужин",
+      "frequency": 350
+    },
+    "завтрак": {
+      "gesture_id": "breakfast",
+      "description": "Завтрак",
+      "frequency": 350
+    }
+  }
+}
+
+
+
+

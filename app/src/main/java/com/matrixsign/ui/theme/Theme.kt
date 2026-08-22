@@ -1,0 +1,81 @@
+package com.matrixsign.ui.theme
+
+import android.app.Activity
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+
+private val DarkColorScheme = darkColorScheme(
+    primary = MatrixGreen,
+    secondary = MatrixGreenBright,
+    tertiary = MatrixGreen,
+    background = MatrixBlack,
+    surface = MatrixBlack,
+    onPrimary = MatrixBlack,
+    onSecondary = MatrixBlack,
+    onTertiary = MatrixBlack,
+    onBackground = MatrixGreen,
+    onSurface = MatrixGreen
+)
+
+private val LightColorScheme = lightColorScheme(
+    primary = MatrixGreen,
+    secondary = MatrixGreenBright,
+    tertiary = MatrixGreen,
+    background = MatrixBlack,
+    surface = MatrixBlack,
+    onPrimary = MatrixBlack,
+    onSecondary = MatrixBlack,
+    onTertiary = MatrixBlack,
+    onBackground = MatrixGreen,
+    onSurface = MatrixGreen
+)
+
+@Composable
+fun MatrixSignTheme(
+    darkTheme: Boolean = true, // Всегда тёмная тема для стиля Матрица
+    dynamicColor: Boolean = false, // Отключаем динамические цвета
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else LightColorScheme
+        }
+        else -> DarkColorScheme
+    }
+    
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}
+
+
+
+
+
+
+
+
+

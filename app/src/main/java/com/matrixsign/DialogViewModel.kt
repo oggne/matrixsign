@@ -191,11 +191,13 @@ class DialogViewModel @Inject constructor(
                 viewModelScope.launch {
                      handleCustomGesture(gestureName)
                 }
-            }
+            },
+            initialSignLanguage = _uiState.value.userSignLanguage
         )
 
         // Load initial sign language model
         viewModelScope.launch {
+            // Ensure gesture recognizer model is loaded for current language
             gestureHelper.switchSignLanguage(_uiState.value.userSignLanguage)
             
             // Update UI state with RSL availability

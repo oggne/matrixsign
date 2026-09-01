@@ -27,7 +27,8 @@ class GestureRecognizerHelper(
     private val onResults: (GestureRecognizerResult) -> Unit,
     private val onHandLandmarks: (List<NormalizedLandmarkList>) -> Unit,
     private val onError: (String, Exception?) -> Unit,
-    private val onCustomGesture: ((String) -> Unit)? = null
+    private val onCustomGesture: ((String) -> Unit)? = null,
+    initialSignLanguage: String = LanguageManager.USER_SIGN_LANGUAGE_RSL
 ) {
     private var gestureRecognizer: GestureRecognizer? = null
     private var handLandmarker: HandLandmarker? = null
@@ -39,8 +40,8 @@ class GestureRecognizerHelper(
     private val userIdManager = UserIdManager(context)
     private val languageManager = LanguageManager(context)
     
-    // Текущий язык жестов
-    private var currentSignLanguage: String = ""
+    // Текущий язык жестов - initialize with default to avoid race condition
+    private var currentSignLanguage: String = initialSignLanguage
     
     // Track RSL classifier availability
     private var isRslInitialized = false

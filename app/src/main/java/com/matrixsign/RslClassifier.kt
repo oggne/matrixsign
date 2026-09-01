@@ -32,29 +32,40 @@ class RslClassifier(private val context: Context) {
         if (isInitialized) return
         
         try {
+            android.util.Log.d("RslClassifier", "Initializing RSL classifier...")
+            
             // Сначала ищем модель во внутреннем хранилище (обученную пользователем)
             val customModelFile = File(context.filesDir, "rsl_classifier.tflite")
             val modelBuffer: ByteBuffer? = if (customModelFile.exists()) {
+                android.util.Log.d("RslClassifier", "Loading custom model from filesDir")
                 loadModelFromFile(customModelFile)
             } else {
                 // Иначе пытаемся загрузить из assets (предобученная)
+                android.util.Log.d("RslClassifier", "Loading model from assets")
                 loadModelFromAssets("rsl_classifier.tflite")
             }
 
             if (modelBuffer != null) {
+                android.util.Log.d("RslClassifier", "Model buffer loaded, size: ${modelBuffer.capacity()} bytes")
+                
                 val options = Interpreter.Options()
                 // Use XNNPACK delegate if available for better CPU performance on Android
                 // options.setUseXNNPACK(true) 
                 
                 interpreter = Interpreter(modelBuffer, options)
+                android.util.Log.d("RslClassifier", "TFLite interpreter created")
                 
                 // Загружаем метки (labels)
                 val customLabelsFile = File(context.filesDir, "rsl_labels.txt")
                 labels = if (customLabelsFile.exists()) {
+                    android.util.Log.d("RslClassifier", "Loading custom labels from filesDir")
                     customLabelsFile.readLines()
                 } else {
+                    android.util.Log.d("RslClassifier", "Loading labels from assets")
                     loadLabelsFromAssets("rsl_labels.txt")
                 }
+                
+                android.util.Log.d("RslClassifier", "Loaded ${labels.size} labels")
                 
                 // Pre-allocate buffers
                 // Input: [1, 63] (21 points * 3 coords) * 4 bytes/float
@@ -68,8 +79,13 @@ class RslClassifier(private val context: Context) {
                 }
 
                 isInitialized = true
+                android.util.Log.i("RslClassifier", "RSL classifier initialized successfully with ${labels.size} classes")
+            } else {
+                android.util.Log.e("RslClassifier", "Failed to load model buffer")
+                isInitialized = false
             }
         } catch (e: Exception) {
+            android.util.Log.e("RslClassifier", "Failed to initialize RSL classifier", e)
             e.printStackTrace()
             isInitialized = false
         }

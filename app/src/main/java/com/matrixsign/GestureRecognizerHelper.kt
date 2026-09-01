@@ -27,7 +27,9 @@ class GestureRecognizerHelper(
     private val onResults: (GestureRecognizerResult) -> Unit,
     private val onHandLandmarks: (List<NormalizedLandmarkList>) -> Unit,
     private val onError: (String, Exception?) -> Unit,
-    private val onCustomGesture: ((String) -> Unit)? = null
+    private val onCustomGesture: ((String) -> Unit)? = null,
+    private val onRawClassifierResult: ((String, Float) -> Unit)? = null, // Unsmoothed top-1 for live UI
+    initialSignLanguage: String = LanguageManager.USER_SIGN_LANGUAGE_RSL
 ) {
     private var gestureRecognizer: GestureRecognizer? = null
     private var handLandmarker: HandLandmarker? = null
@@ -39,8 +41,11 @@ class GestureRecognizerHelper(
     private val userIdManager = UserIdManager(context)
     private val languageManager = LanguageManager(context)
     
-    // Текущий язык жестов
-    private var currentSignLanguage: String = ""
+    // Текущий язык жестов - initialize with default to avoid race condition
+    private var currentSignLanguage: String = initialSignLanguage
+    
+    // Track RSL classifier availability
+    private var isRslInitialized = false
     
     // Базовые опции для разных моделей
     private val baseOptionsDefault = BaseOptions.builder()
@@ -83,7 +88,14 @@ class GestureRecognizerHelper(
     init {
         setupGestureRecognizer()
         setupHandLandmarker()
-        rslClassifier.initialize()
+        try {
+            rslClassifier.initialize()
+            isRslInitialized = true
+            android.util.Log.d("GestureRecognizerHelper", "RSL classifier initialized successfully")
+        } catch (e: Exception) {
+            isRslInitialized = false
+            android.util.Log.w("GestureRecognizerHelper", "RSL classifier not available: ${e.message}")
+        }
         // Загрузка кастомных моделей будет выполнена асинхронно через loadCustomModels()
     }
     
@@ -286,18 +298,27 @@ class GestureRecognizerHelper(
                     }
                     onHandLandmarks(handLandmarkProtoLists)
                     
-                    // RSL Classification (только если выбран язык RSL)
-                    if (currentSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL) {
+                    // RSL Classification (только если выбран язык RSL и модель доступна)
+                    if (currentSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL && isRslInitialized) {
                         try {
-                            val rslResult = rslClassifier.classify(result)
-                            // Smooth the result
-                            val smoothedResult = gestureSmoother.process(rslResult)
+                            val rslResult = rslClassifier.classifyWithConfidence(result)
                             
-                            if (smoothedResult != null) {
-                                onCustomGesture?.invoke(smoothedResult)
+                            if (rslResult != null) {
+                                // Update raw top-1 immediately for live debug readout
+                                onRawClassifierResult?.invoke(rslResult.label, rslResult.confidence)
+                                
+                                // Smooth the result for TTS/commit
+                                if (rslResult.passedThreshold) {
+                                    val smoothedResult = gestureSmoother.process(rslResult.label)
+                                    
+                                    if (smoothedResult != null) {
+                                        onCustomGesture?.invoke(smoothedResult)
+                                    }
+                                }
                             }
                         } catch (e: Exception) {
                             // Ignore classification errors to not stop the stream
+                            android.util.Log.e("GestureRecognizerHelper", "RSL classification error", e)
                         }
                     }
                 }
@@ -310,6 +331,13 @@ class GestureRecognizerHelper(
         } catch (e: Exception) {
             onError("Failed to initialize HandLandmarker: ${e.message}", e)
         }
+    }
+    
+    /**
+     * Check if RSL classifier is available and initialized
+     */
+    fun isRslAvailable(): Boolean {
+        return isRslInitialized
     }
 
     @OptIn(ExperimentalGetImage::class)

@@ -263,7 +263,7 @@ private class MatrixOverlayPresentation(
         landmarksTextView?.textSize = 14f
         landmarksTextView?.setTextColor(0xFF00FF41.toInt())
         
-        setContentView(rootView)
+        rootView?.let { setContentView(it) }
     }
     
     fun updateContent(newContent: String, newLandmarks: String?) {

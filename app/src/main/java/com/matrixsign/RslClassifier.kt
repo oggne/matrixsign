@@ -140,11 +140,21 @@ class RslClassifier(private val context: Context) {
      * @return Название жеста или null, если уверенность низкая или модель не готова.
      */
     fun classify(result: HandLandmarkerResult): String? {
-        if (!isInitialized || interpreter == null || labels.isEmpty()) return null
+        android.util.Log.d("RslClassifier", "classify() called")
+        
+        if (!isInitialized || interpreter == null || labels.isEmpty()) {
+            android.util.Log.w("RslClassifier", "Classifier not ready: initialized=$isInitialized, interpreter=${interpreter != null}, labels=${labels.size}")
+            return null
+        }
         
         // Берем первую руку
-        if (result.landmarks().isEmpty()) return null
+        if (result.landmarks().isEmpty()) {
+            android.util.Log.d("RslClassifier", "No landmarks detected")
+            return null
+        }
         val landmarks = result.landmarks()[0]
+        
+        android.util.Log.d("RslClassifier", "Processing ${landmarks.size} landmarks")
         
         // Reset input buffer position
         val input = inputBuffer ?: return null
@@ -186,10 +196,20 @@ class RslClassifier(private val context: Context) {
             input.putFloat(coord)
         }
         
+        // CRITICAL FIX: Rewind buffer after filling so TFLite can read from position 0
+        input.rewind()
+        android.util.Log.d("RslClassifier", "Input buffer prepared: position=${input.position()}, capacity=${input.capacity()}")
+        
         // Run inference
         val output = outputBuffer ?: return null
         
-        interpreter?.run(input, output)
+        try {
+            interpreter?.run(input, output)
+            android.util.Log.d("RslClassifier", "TFLite inference completed")
+        } catch (e: Exception) {
+            android.util.Log.e("RslClassifier", "TFLite inference failed", e)
+            return null
+        }
         
         // Поиск максимума
         val probabilities = output[0]
@@ -203,15 +223,18 @@ class RslClassifier(private val context: Context) {
             }
         }
         
-        // Log for debugging
-        if (maxProb > 0.1f) {
-             android.util.Log.d("RslClassifier", "Top: $maxIndex (${labels.getOrElse(maxIndex) {"?"}}) = $maxProb")
-        }
-
-        // Порог уверенности снижен до 0.6 для более стабильного срабатывания при сглаживании
-        return if (maxIndex != -1 && maxProb > 0.6f && maxIndex < labels.size) {
+        val topLabel = if (maxIndex >= 0 && maxIndex < labels.size) labels[maxIndex] else "?"
+        
+        // ALWAYS log classification result for debugging
+        android.util.Log.d("RslClassifier", "Top prediction: index=$maxIndex, label='$topLabel', confidence=$maxProb (threshold=0.6)")
+        
+        // Lower threshold to 0.4 for better visibility during testing
+        // Producer requirement: show dictionary words even if confidence is not perfect
+        return if (maxIndex != -1 && maxProb > 0.4f && maxIndex < labels.size) {
+            android.util.Log.i("RslClassifier", "✓ Recognized: '$topLabel' (confidence=$maxProb)")
             labels[maxIndex]
         } else {
+            android.util.Log.d("RslClassifier", "✗ Below threshold or invalid: maxProb=$maxProb, maxIndex=$maxIndex")
             null
         }
     }

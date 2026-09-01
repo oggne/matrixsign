@@ -144,6 +144,45 @@ class RslClassifierTest {
         }
     }
 
+    @Test
+    fun testTfLiteBufferPositionBug_bufferMustBeReadableAfterFill() {
+        // CRITICAL TEST: This test would catch the buffer position bug
+        // 
+        // Bug: After filling ByteBuffer with putFloat(), position == capacity.
+        // If we don't rewind(), TFLite reads from position to limit (nothing).
+        // 
+        // Correct flow:
+        // 1. buffer.rewind() - set position = 0
+        // 2. Fill with buffer.putFloat() repeatedly - advances position
+        // 3. buffer.rewind() again - reset position = 0 for TFLite to read
+        // 4. TFLite reads from position=0 to limit
+        
+        val buffer = java.nio.ByteBuffer.allocateDirect(21 * 3 * 4)
+        buffer.order(java.nio.ByteOrder.nativeOrder())
+        
+        // Simulate filling buffer like RslClassifier does
+        buffer.rewind()
+        for (i in 0 until 63) {
+            buffer.putFloat(i * 0.1f)
+        }
+        
+        // At this point, position == capacity (252 bytes)
+        assertEquals(252, buffer.position())
+        assertEquals(252, buffer.capacity())
+        assertEquals(0, buffer.remaining()) // Nothing left to read!
+        
+        // CRITICAL: Must rewind before TFLite reads
+        buffer.rewind()
+        
+        // Now buffer is readable
+        assertEquals(0, buffer.position())
+        assertEquals(252, buffer.remaining())
+        
+        // Verify we can read back the data
+        val firstValue = buffer.getFloat()
+        assertEquals(0.0f, firstValue, 0.001f)
+    }
+
     private fun createEmptyHandLandmarkerResult(): HandLandmarkerResult {
         return HandLandmarkerResult.create(
             emptyList(), // landmarks

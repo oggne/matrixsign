@@ -28,6 +28,7 @@ class GestureRecognizerHelper(
     private val onHandLandmarks: (List<NormalizedLandmarkList>) -> Unit,
     private val onError: (String, Exception?) -> Unit,
     private val onCustomGesture: ((String) -> Unit)? = null,
+    private val onRawClassifierResult: ((String, Float) -> Unit)? = null, // Unsmoothed top-1 for live UI
     initialSignLanguage: String = LanguageManager.USER_SIGN_LANGUAGE_RSL
 ) {
     private var gestureRecognizer: GestureRecognizer? = null
@@ -300,12 +301,20 @@ class GestureRecognizerHelper(
                     // RSL Classification (только если выбран язык RSL и модель доступна)
                     if (currentSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL && isRslInitialized) {
                         try {
-                            val rslResult = rslClassifier.classify(result)
-                            // Smooth the result
-                            val smoothedResult = gestureSmoother.process(rslResult)
+                            val rslResult = rslClassifier.classifyWithConfidence(result)
                             
-                            if (smoothedResult != null) {
-                                onCustomGesture?.invoke(smoothedResult)
+                            if (rslResult != null) {
+                                // Update raw top-1 immediately for live debug readout
+                                onRawClassifierResult?.invoke(rslResult.label, rslResult.confidence)
+                                
+                                // Smooth the result for TTS/commit
+                                if (rslResult.passedThreshold) {
+                                    val smoothedResult = gestureSmoother.process(rslResult.label)
+                                    
+                                    if (smoothedResult != null) {
+                                        onCustomGesture?.invoke(smoothedResult)
+                                    }
+                                }
                             }
                         } catch (e: Exception) {
                             // Ignore classification errors to not stop the stream

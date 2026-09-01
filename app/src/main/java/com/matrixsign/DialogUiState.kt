@@ -18,6 +18,8 @@ data class DialogUiState(
     val dialogState: DialogState = DialogState.LISTENING,
     val decodedGestureText: String = "",
     val gestureText: String = "", // Raw gesture name
+    val rawClassifierTop1: String = "", // Unsmoothed top-1 for live debug readout
+    val rawClassifierConfidence: Float = 0f, // Confidence for raw top-1
     val t9Suggestions: List<String> = emptyList(),
     val selectedT9Index: Int = 0,
     val opponentLanguage: String = LanguageManager.DEFAULT_OPPONENT_LANGUAGE,

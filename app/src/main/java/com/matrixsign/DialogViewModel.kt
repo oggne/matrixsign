@@ -192,6 +192,13 @@ class DialogViewModel @Inject constructor(
                      handleCustomGesture(gestureName)
                 }
             },
+            onRawClassifierResult = { label, confidence ->
+                // Update raw top-1 immediately for live debug readout (unsmoothed)
+                _uiState.update { it.copy(
+                    rawClassifierTop1 = label,
+                    rawClassifierConfidence = confidence
+                )}
+            },
             initialSignLanguage = _uiState.value.userSignLanguage
         )
 

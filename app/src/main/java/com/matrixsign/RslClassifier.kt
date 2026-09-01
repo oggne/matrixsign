@@ -135,11 +135,29 @@ class RslClassifier(private val context: Context) {
     }
 
     /**
+     * Result of RSL classification with label and confidence
+     */
+    data class ClassificationResult(
+        val label: String,
+        val confidence: Float,
+        val passedThreshold: Boolean
+    )
+
+    /**
      * Классификация жеста.
      * @param result Результат от MediaPipe HandLandmarker
      * @return Название жеста или null, если уверенность низкая или модель не готова.
      */
     fun classify(result: HandLandmarkerResult): String? {
+        val fullResult = classifyWithConfidence(result)
+        return if (fullResult?.passedThreshold == true) fullResult.label else null
+    }
+    
+    /**
+     * Классификация жеста с полной информацией о confidence.
+     * Используется для показа необработанного top-1 в UI.
+     */
+    fun classifyWithConfidence(result: HandLandmarkerResult): ClassificationResult? {
         android.util.Log.d("RslClassifier", "classify() called")
         
         if (!isInitialized || interpreter == null || labels.isEmpty()) {
@@ -226,17 +244,21 @@ class RslClassifier(private val context: Context) {
         val topLabel = if (maxIndex >= 0 && maxIndex < labels.size) labels[maxIndex] else "?"
         
         // ALWAYS log classification result for debugging
-        android.util.Log.d("RslClassifier", "Top prediction: index=$maxIndex, label='$topLabel', confidence=$maxProb (threshold=0.6)")
+        android.util.Log.d("RslClassifier", "Top prediction: index=$maxIndex, label='$topLabel', confidence=$maxProb (threshold=0.4)")
         
-        // Lower threshold to 0.4 for better visibility during testing
-        // Producer requirement: show dictionary words even if confidence is not perfect
-        return if (maxIndex != -1 && maxProb > 0.4f && maxIndex < labels.size) {
+        val passedThreshold = maxIndex != -1 && maxProb > 0.4f && maxIndex < labels.size
+        
+        if (passedThreshold) {
             android.util.Log.i("RslClassifier", "✓ Recognized: '$topLabel' (confidence=$maxProb)")
-            labels[maxIndex]
         } else {
             android.util.Log.d("RslClassifier", "✗ Below threshold or invalid: maxProb=$maxProb, maxIndex=$maxIndex")
-            null
         }
+        
+        return ClassificationResult(
+            label = topLabel,
+            confidence = maxProb,
+            passedThreshold = passedThreshold
+        )
     }
     
     fun close() {

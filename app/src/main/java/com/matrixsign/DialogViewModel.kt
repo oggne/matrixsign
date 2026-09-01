@@ -137,6 +137,13 @@ class DialogViewModel @Inject constructor(
                      }
                 }
             }
+            
+            // Observe Mudra Connection State
+            launch {
+                mudraManager.connectionState.collect { state ->
+                    _uiState.update { it.copy(mudraConnectionState = state) }
+                }
+            }
         }
     }
 
@@ -190,6 +197,14 @@ class DialogViewModel @Inject constructor(
         // Load initial sign language model
         viewModelScope.launch {
             gestureHelper.switchSignLanguage(_uiState.value.userSignLanguage)
+            
+            // Update UI state with RSL availability
+            val isRslAvailable = gestureHelper.isRslAvailable()
+            _uiState.update { it.copy(rslModelAvailable = isRslAvailable) }
+            
+            if (!isRslAvailable && _uiState.value.userSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL) {
+                Log.w("DialogVM", "РЖЯ выбран, но модель недоступна - используется базовое распознавание")
+            }
         }
 
         // Mudra callback
@@ -433,6 +448,10 @@ class DialogViewModel @Inject constructor(
              decodedGestureText = newText,
              dialogState = if (it.dialogState == DialogState.LISTENING) DialogState.COMPOSING else it.dialogState
         )}
+
+        // Add recognized RSL sign to TTS buffer for later speech
+        ttsHelper.addToBuffer(gestureName)
+        _uiState.update { it.copy(ttsBuffer = ttsHelper.getBuffer()) }
 
         vibrateShort()
         if (mudraManager.isT9ConfirmGesture(gestureName)) {

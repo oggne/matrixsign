@@ -38,5 +38,7 @@ data class DialogUiState(
     val showSettings: Boolean = false,
     val showKeyboardInput: Boolean = false,
     val keyboardInputText: String = "",
-    val showDeviceFoundDialog: String? = null
+    val showDeviceFoundDialog: String? = null,
+    val rslModelAvailable: Boolean = true, // Track if RSL model is available
+    val mudraConnectionState: MudraManager.ConnectionState = MudraManager.ConnectionState.DISCONNECTED
 )

@@ -42,6 +42,9 @@ class GestureRecognizerHelper(
     // Текущий язык жестов
     private var currentSignLanguage: String = ""
     
+    // Track RSL classifier availability
+    private var isRslInitialized = false
+    
     // Базовые опции для разных моделей
     private val baseOptionsDefault = BaseOptions.builder()
         .setDelegate(Delegate.GPU)
@@ -83,7 +86,14 @@ class GestureRecognizerHelper(
     init {
         setupGestureRecognizer()
         setupHandLandmarker()
-        rslClassifier.initialize()
+        try {
+            rslClassifier.initialize()
+            isRslInitialized = true
+            android.util.Log.d("GestureRecognizerHelper", "RSL classifier initialized successfully")
+        } catch (e: Exception) {
+            isRslInitialized = false
+            android.util.Log.w("GestureRecognizerHelper", "RSL classifier not available: ${e.message}")
+        }
         // Загрузка кастомных моделей будет выполнена асинхронно через loadCustomModels()
     }
     
@@ -286,8 +296,8 @@ class GestureRecognizerHelper(
                     }
                     onHandLandmarks(handLandmarkProtoLists)
                     
-                    // RSL Classification (только если выбран язык RSL)
-                    if (currentSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL) {
+                    // RSL Classification (только если выбран язык RSL и модель доступна)
+                    if (currentSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL && isRslInitialized) {
                         try {
                             val rslResult = rslClassifier.classify(result)
                             // Smooth the result
@@ -298,6 +308,7 @@ class GestureRecognizerHelper(
                             }
                         } catch (e: Exception) {
                             // Ignore classification errors to not stop the stream
+                            android.util.Log.e("GestureRecognizerHelper", "RSL classification error", e)
                         }
                     }
                 }
@@ -310,6 +321,13 @@ class GestureRecognizerHelper(
         } catch (e: Exception) {
             onError("Failed to initialize HandLandmarker: ${e.message}", e)
         }
+    }
+    
+    /**
+     * Check if RSL classifier is available and initialized
+     */
+    fun isRslAvailable(): Boolean {
+        return isRslInitialized
     }
 
     @OptIn(ExperimentalGetImage::class)

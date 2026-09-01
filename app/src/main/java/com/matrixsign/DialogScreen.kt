@@ -184,7 +184,7 @@ fun DialogScreen(
                 }
             }
             
-            // Текущий текст (STT или Жесты)
+            // Текущий текст (STT или Жесты) - ALWAYS show if composing, even with chat history
             val textToDisplay = when {
                 (uiState.dialogState == DialogState.COMPOSING || uiState.dialogState == DialogState.CONFIRMING) -> uiState.decodedGestureText
                 uiState.translatedSttText.isNotEmpty() -> uiState.translatedSttText
@@ -192,12 +192,24 @@ fun DialogScreen(
                 else -> ""
             }
             
-            if (textToDisplay.isNotEmpty() && uiState.chatMessages.isEmpty()) {
+            // Show text even when chat has messages (producer requirement)
+            if (textToDisplay.isNotEmpty()) {
                 AnimatedText(
                     text = textToDisplay,
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     fontSize = uiState.fontSize.sp,
                     color = matrixGreen,
+                    fontFamily = matrixFontFamily
+                )
+            }
+            
+            // Raw classifier top-1 for live debug (unsmoothed)
+            if (uiState.rawClassifierTop1.isNotEmpty() && uiState.userSignLanguage == LanguageManager.USER_SIGN_LANGUAGE_RSL) {
+                Text(
+                    text = "🔍 ${uiState.rawClassifierTop1} (${String.format("%.2f", uiState.rawClassifierConfidence)})",
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    fontSize = (uiState.fontSize * 0.8f).sp,
+                    color = matrixGreen.copy(alpha = 0.6f),
                     fontFamily = matrixFontFamily
                 )
             }

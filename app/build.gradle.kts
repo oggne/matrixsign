@@ -56,11 +56,12 @@ android {
     }
 }
 
-configurations.all {
-    resolutionStrategy {
-        force("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
-    }
-}
+// Removed kotlin-stdlib force resolution - conflicts with Kotlin 2.2.10 plugin
+// configurations.all {
+//     resolutionStrategy {
+//         force("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
+//     }
+// }
 
 dependencies {
     // Core Android
@@ -126,7 +127,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     
     // Room Database
-    val roomVersion = "2.6.1"
+    val roomVersion = "2.8.4"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")

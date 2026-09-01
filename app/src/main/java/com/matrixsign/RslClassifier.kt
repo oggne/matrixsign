@@ -10,10 +10,30 @@ import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
 /**
+ * DEPRECATED: Single-frame 968-class MLP classifier (legacy).
+ * 
+ * This classifier is NO LONGER USED in the live recognition path as of Sprint 1.
+ * It has been replaced by RslSequenceClassifier which:
+ * - Uses a sequence of frames (not single frame)
+ * - Targets 36-word vocabulary from rsl_dictionary.json (not 968 Slovo classes)
+ * - Supports hold-to-sign UX
+ * 
+ * This file is kept for reference during migration but should be removed after
+ * Sprint 1 verification is complete.
+ * 
+ * See: RslSequenceClassifier.kt (NEW)
+ * See: docs/RSL_SEQUENCE_TRAINING.md
+ * 
+ * Original description:
  * Классификатор жестов РЖЯ на основе TFLite модели.
  * Принимает на вход landmarks от MediaPipe и выдает метку жеста.
  * Optimized version: pre-allocates buffers.
  */
+@Deprecated(
+    message = "Use RslSequenceClassifier instead. This single-frame classifier is no longer used.",
+    replaceWith = ReplaceWith("RslSequenceClassifier"),
+    level = DeprecationLevel.WARNING
+)
 class RslClassifier(private val context: Context) {
 
     private var interpreter: Interpreter? = null
